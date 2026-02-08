@@ -131,18 +131,14 @@ jobs:
             # ARM64 cross-compilation (Raspberry Pi)
             if [ "${{ matrix.cross }}" = "true" ]; then
               sudo apt-get update -qq
-              sudo apt-get install -y crossbuild-essential-arm64
+              # install cross compiler essentials
+              sudo apt-get install -y crossbuild-essential-arm64 tree
 
-              sudo apt-get install -y \
-                libudev-dev:arm64 \
-                libusb-1.0-0-dev:arm64 \
-                libhidapi-dev:arm64 \
-                pkg-config:arm64 \
-                tree
-
+              # Enable cross-compilation for pkg-config
               export PKG_CONFIG_ALLOW_CROSS=1
-              export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+              export PKG_CONFIG_PATH=/usr/aarch64-linux-gnu/lib/pkgconfig
             fi
+
           elif [ "${{ matrix.platform }}" = "macos" ]; then
             brew install tree
           fi
