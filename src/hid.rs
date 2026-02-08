@@ -302,7 +302,7 @@ impl Hid {
         if let Some(ref dev) = self.dev {
             if let Ok(manufacturer_string) = dev.get_manufacturer_string() {
                 if let Some(manufacturer_string) = manufacturer_string {
-                    return manufacturer_string.into();
+                    return manufacturer_string.as_str().into();
                 } else {
                     return "".into();
                 }
@@ -320,7 +320,7 @@ impl Hid {
         if let Some(ref dev) = self.dev {
             if let Ok(product_string) = dev.get_product_string() {
                 if let Some(product_string) = product_string {
-                    return product_string.into();
+                    return product_string.as_str().into();
                 } else {
                     return "".into();
                 }
@@ -338,7 +338,7 @@ impl Hid {
         if let Some(ref dev) = self.dev {
             if let Ok(serial_number_string) = dev.get_serial_number_string() {
                 if let Some(serial_number_string) = serial_number_string {
-                    return serial_number_string.into();
+                    return serial_number_string.as_str().into();
                 } else {
                     return "".into();
                 }
@@ -356,7 +356,7 @@ impl Hid {
         if let Some(ref dev) = self.dev {
             if let Ok(indexed_string) = dev.get_indexed_string(index) {
                 if let Some(indexed_string) = indexed_string {
-                    return indexed_string.into();
+                    return indexed_string.as_str().into();
                 } else {
                     return "".into();
                 }
