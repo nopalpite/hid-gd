@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 env:
-  GODOT_VERSION: 4.6  # Godot 4.6 stable (January 2025)
+  GODOT_VERSION: 4.6
   RUST_VERSION: stable
 
 jobs:
@@ -24,9 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # ============================================
-          # LINUX
-          # ============================================
+          # LINUX x86_64
           - name: Linux (x86_64)
             platform: linux
             arch: x86_64
@@ -34,24 +32,23 @@ jobs:
             target: x86_64-unknown-linux-gnu
             cross: false
 
-          # 🆕 NOUVEAU: Support Raspberry Pi 5
+          # LINUX ARM64 (Raspberry Pi 5)
           - name: Linux (ARM64)
             platform: linux
             arch: arm64
             os: ubuntu-22.04
             target: aarch64-unknown-linux-gnu
-            cross: true  # Cross-compilation nécessaire
+            cross: true
 
-          # ============================================
-          # MACOS
-          # ============================================
+          # MACOS x86_64
           - name: MacOS (x86_64)
             platform: macos
             arch: x86_64
             os: macos-latest
             target: x86_64-apple-darwin
             cross: false
-        
+
+          # MACOS ARM64
           - name: MacOS (ARM64)
             platform: macos
             arch: arm64
@@ -59,9 +56,7 @@ jobs:
             target: aarch64-apple-darwin
             cross: false
 
-          # ============================================
-          # WINDOWS
-          # ============================================
+          # WINDOWS x86_64
           - name: Windows (x86_64)
             platform: windows
             arch: x86_64
@@ -88,15 +83,14 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-
-      # 🆕 Installation Rust moderne (sans actions-rs)
+      # Install Rust
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
           toolchain: ${{ env.RUST_VERSION }}
 
-      # 🆕 Cache Cargo pour accélérer les builds
+      # Cache Cargo
       - name: Cache Cargo registry
         uses: actions/cache@v4
         with:
@@ -130,30 +124,23 @@ jobs:
           if [ "${{ matrix.platform }}" = "linux" ]; then
             set -eux
 
-            # Mise à jour standard pour x86_64
+            # x86_64 deps
             sudo apt-get update -qq
             sudo apt-get install -qqq libudev-dev libusb-1.0-0-dev tree libhidapi-dev pkg-config
 
-            # 🆕 Pour cross-compilation ARM64
+            # ARM64 cross-compilation
             if [ "${{ matrix.cross }}" = "true" ]; then
-              # Enable ARM64 architecture for multiarch packages
               sudo dpkg --add-architecture arm64
-
-              # Fix des sources pour arm64 sur GitHub runners
+              # Redirect sources to ubuntu-ports
               sudo sed -i 's|http://archive.ubuntu.com/ubuntu|http://ports.ubuntu.com/ubuntu-ports|g' /etc/apt/sources.list
               sudo sed -i 's|http://security.ubuntu.com/ubuntu|http://ports.ubuntu.com/ubuntu-ports|g' /etc/apt/sources.list
-
               sudo apt-get update -qq
-
               sudo apt-get install -qqq \
                 gcc-aarch64-linux-gnu \
                 g++-aarch64-linux-gnu \
                 libhidapi-dev:arm64 \
                 libudev-dev:arm64 \
-                libusb-1.0-0-dev:arm64 \
-                pkg-config:arm64
-
-              # Pour pkg-config cross compilation
+                libusb-1.0-0-dev:arm64
               export PKG_CONFIG_ALLOW_CROSS=1
               export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
             fi
@@ -161,7 +148,7 @@ jobs:
             brew install tree
           fi
 
-      # 🆕 Configuration cross-compilation pour ARM64
+      # Cargo cross-compilation config
       - name: Configure cross-compilation
         if: matrix.cross == true
         shell: bash
@@ -177,55 +164,27 @@ jobs:
       # ============================================
       - name: Build binary files (debug)
         shell: bash
-        run: |
-          cargo build --verbose --target ${{ matrix.target }}
+        run: cargo build --verbose --target ${{ matrix.target }}
 
-      - name: Archive files (debug)
+      - name: Archive debug files
         shell: bash
         run: |
           addon_name="hid"
           bin_dir="debug_build/addons/$addon_name/bin"
           bin_name="${addon_name}_ext"
-          
+
           mkdir -p $bin_dir
-          
-          # Copier les binaires selon la plateforme
+
           if [ "${{ matrix.platform }}" = "linux" ]; then
             tree target/${{ matrix.target }}/debug/ || true
-
-            bin_file_debug="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.so"
-            cp target/${{ matrix.target }}/debug/lib$bin_name.so $bin_dir/$bin_file_debug
-
-            # Debug info (si disponible)
-            if [ -f "target/${{ matrix.target }}/debug/lib$bin_name.so.dwp" ]; then
-              debug_info="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.so.dwp"
-              cp target/${{ matrix.target }}/debug/lib$bin_name.so.dwp $bin_dir/$debug_info
-            fi
-            
+            cp target/${{ matrix.target }}/debug/lib$bin_name.so $bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.so
           elif [ "${{ matrix.platform }}" = "macos" ]; then
-            tree target/${{ matrix.target }}/debug/ || true
-
-            bin_file_debug="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.dylib"
-            cp target/${{ matrix.target }}/debug/lib$bin_name.dylib $bin_dir/$bin_file_debug
-
-            # Debug symbols (si disponible)
-            if [ -d "target/${{ matrix.target }}/debug/deps/lib$bin_name.dylib.dSYM" ]; then
-              debug_info="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.dylib.dSYM"
-              cp -r target/${{ matrix.target }}/debug/deps/lib$bin_name.dylib.dSYM $bin_dir/$debug_info
-            fi
-            
+            cp target/${{ matrix.target }}/debug/lib$bin_name.dylib $bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.dylib
           elif [ "${{ matrix.platform }}" = "windows" ]; then
-            bin_file_debug="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.dll"
-            cp target/${{ matrix.target }}/debug/$bin_name.dll $bin_dir/$bin_file_debug
-
-            # PDB debug symbols
-            if [ -f "target/${{ matrix.target }}/debug/$bin_name.pdb" ]; then
-              debug_info="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.pdb"
-              cp target/${{ matrix.target }}/debug/$bin_name.pdb $bin_dir/$debug_info
-            fi
+            cp target/${{ matrix.target }}/debug/$bin_name.dll $bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.dll
           fi
 
-          # 🆕 Créer .gdextension avec le bon entry_symbol pour gdext 0.3
+          # Create .gdextension
           cat > $bin_dir/../$addon_name.gdextension << EOF
           [configuration]
           entry_symbol = "gdext_rust_init"
@@ -233,21 +192,19 @@ jobs:
           reloadable = true
 
           [libraries]
-          ${{ matrix.platform }}.${{ matrix.arch }}.debug = "bin/$bin_file_debug"
+          ${{ matrix.platform }}.${{ matrix.arch }}.debug = "bin/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.${{ matrix.platform == 'windows' && 'dll' || matrix.platform == 'macos' && 'dylib' || 'so' }}"
 
           [dependencies]
           ${{ matrix.platform }}.${{ matrix.arch }} = {}
-
           EOF
 
+          # Archive
           archive_name="$addon_name-${{ env.VERSION }}-${{ matrix.platform }}-${{ matrix.arch }}-debug"
-
           cd debug_build
           if [ "${{ matrix.platform }}" = "windows" ]; then
             7z a "../$archive_name.zip" "addons"
             echo "ASSET_DEBUG=$archive_name.zip" >> $GITHUB_ENV
           else
-            tree addons || true
             tar -czvf "../$archive_name.tar.gz" "addons"
             echo "ASSET_DEBUG=$archive_name.tar.gz" >> $GITHUB_ENV
           fi
@@ -259,38 +216,32 @@ jobs:
           files: |
             ${{ env.ASSET_DEBUG }}
           overwrite_files: true
+
       # ============================================
       # BUILD RELEASE
       # ============================================
       - name: Build binary files (release)
         shell: bash
-        run: |
-          cargo build --verbose --release --target ${{ matrix.target }}
+        run: cargo build --verbose --release --target ${{ matrix.target }}
 
-      - name: Archive files (release)
+      - name: Archive release files
         shell: bash
         run: |
           addon_name="hid"
           bin_dir="release_build/addons/$addon_name/bin"
           bin_name="${addon_name}_ext"
-          
+
           mkdir -p $bin_dir
-          
-          # Copier les binaires selon la plateforme
+
           if [ "${{ matrix.platform }}" = "linux" ]; then
-            bin_file_release="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.so"
-            cp target/${{ matrix.target }}/release/lib$bin_name.so $bin_dir/$bin_file_release
-            
+            cp target/${{ matrix.target }}/release/lib$bin_name.so $bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.so
           elif [ "${{ matrix.platform }}" = "macos" ]; then
-            bin_file_release="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.dylib"
-            cp target/${{ matrix.target }}/release/lib$bin_name.dylib $bin_dir/$bin_file_release
-            
+            cp target/${{ matrix.target }}/release/lib$bin_name.dylib $bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.dylib
           elif [ "${{ matrix.platform }}" = "windows" ]; then
-            bin_file_release="lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.dll"
-            cp target/${{ matrix.target }}/release/$bin_name.dll $bin_dir/$bin_file_release
+            cp target/${{ matrix.target }}/release/$bin_name.dll $bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.dll
           fi
 
-          # 🆕 Créer .gdextension avec le bon entry_symbol pour gdext 0.3
+          # Create .gdextension
           cat > $bin_dir/../$addon_name.gdextension << EOF
           [configuration]
           entry_symbol = "gdext_rust_init"
@@ -298,21 +249,19 @@ jobs:
           reloadable = true
 
           [libraries]
-          ${{ matrix.platform }}.${{ matrix.arch }} = "bin/$bin_file_release"
+          ${{ matrix.platform }}.${{ matrix.arch }} = "bin/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.${{ matrix.platform == 'windows' && 'dll' || matrix.platform == 'macos' && 'dylib' || 'so' }}"
 
           [dependencies]
           ${{ matrix.platform }}.${{ matrix.arch }} = {}
-
           EOF
 
+          # Archive
           archive_name="$addon_name-${{ env.VERSION }}-${{ matrix.platform }}-${{ matrix.arch }}-release"
-
           cd release_build
           if [ "${{ matrix.platform }}" = "windows" ]; then
             7z a "../$archive_name.zip" "addons"
             echo "ASSET_RELEASE=$archive_name.zip" >> $GITHUB_ENV
           else
-            tree addons || true
             tar -czvf "../$archive_name.tar.gz" "addons"
             echo "ASSET_RELEASE=$archive_name.tar.gz" >> $GITHUB_ENV
           fi
