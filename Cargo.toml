@@ -13,7 +13,14 @@ crate-type = ["cdylib"]
 godot = "0.4"  # Version 0.4.5 (dernière stable février 2026)
 
 # HID API
-hidapi = "2.6"
+[target.'cfg(target_os = "linux")'.dependencies]
+hidapi = { version = "2.6", default-features = false, features = ["linux-shared-hidraw"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+hidapi = { version = "2.6", default-features = false }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+hidapi = { version = "2.6", default-features = false }
 
 [profile.dev]
 opt-level = 1
