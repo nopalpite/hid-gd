@@ -129,17 +129,33 @@ jobs:
         run: |
           if [ "${{ matrix.platform }}" = "linux" ]; then
             set -eux
+
+            # Mise à jour standard pour x86_64
             sudo apt-get update -qq
             sudo apt-get install -qqq libudev-dev libusb-1.0-0-dev tree libhidapi-dev pkg-config
-            
+
             # 🆕 Pour cross-compilation ARM64
             if [ "${{ matrix.cross }}" = "true" ]; then
-            # Enable ARM64 architecture for multiarch packages
-            sudo dpkg --add-architecture arm64
-            sudo apt-get update -qq
-            sudo apt-get install -qqq gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libhidapi-dev:arm64
-            export PKG_CONFIG_ALLOW_CROSS=1
-            export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+              # Enable ARM64 architecture for multiarch packages
+              sudo dpkg --add-architecture arm64
+
+              # Fix des sources pour arm64 sur GitHub runners
+              sudo sed -i 's|http://archive.ubuntu.com/ubuntu|http://ports.ubuntu.com/ubuntu-ports|g' /etc/apt/sources.list
+              sudo sed -i 's|http://security.ubuntu.com/ubuntu|http://ports.ubuntu.com/ubuntu-ports|g' /etc/apt/sources.list
+
+              sudo apt-get update -qq
+
+              sudo apt-get install -qqq \
+                gcc-aarch64-linux-gnu \
+                g++-aarch64-linux-gnu \
+                libhidapi-dev:arm64 \
+                libudev-dev:arm64 \
+                libusb-1.0-0-dev:arm64 \
+                pkg-config:arm64
+
+              # Pour pkg-config cross compilation
+              export PKG_CONFIG_ALLOW_CROSS=1
+              export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
             fi
           elif [ "${{ matrix.platform }}" = "macos" ]; then
             brew install tree
@@ -237,11 +253,10 @@ jobs:
           fi
 
       - name: Upload debug artifacts
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ${{ env.ASSET_DEBUG }}
-
+          files: ${{ env.ASSET_DEBUG }}
       # ============================================
       # BUILD RELEASE
       # ============================================
@@ -301,7 +316,7 @@ jobs:
           fi
 
       - name: Upload release artifacts
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ${{ env.ASSET_RELEASE }}
+          files: ${{ env.ASSET_RELEASE }}
