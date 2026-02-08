@@ -128,19 +128,18 @@ jobs:
             sudo apt-get update -qq
             sudo apt-get install -qqq libudev-dev libusb-1.0-0-dev tree libhidapi-dev pkg-config
 
-            # ARM64 cross-compilation
+            # ARM64 cross-compilation (Raspberry Pi)
             if [ "${{ matrix.cross }}" = "true" ]; then
-              sudo dpkg --add-architecture arm64
-              # Redirect sources to ubuntu-ports
-              sudo sed -i 's|http://archive.ubuntu.com/ubuntu|http://ports.ubuntu.com/ubuntu-ports|g' /etc/apt/sources.list
-              sudo sed -i 's|http://security.ubuntu.com/ubuntu|http://ports.ubuntu.com/ubuntu-ports|g' /etc/apt/sources.list
               sudo apt-get update -qq
-              sudo apt-get install -qqq \
-                gcc-aarch64-linux-gnu \
-                g++-aarch64-linux-gnu \
-                libhidapi-dev:arm64 \
+              sudo apt-get install -y crossbuild-essential-arm64
+
+              sudo apt-get install -y \
                 libudev-dev:arm64 \
-                libusb-1.0-0-dev:arm64
+                libusb-1.0-0-dev:arm64 \
+                libhidapi-dev:arm64 \
+                pkg-config:arm64 \
+                tree
+
               export PKG_CONFIG_ALLOW_CROSS=1
               export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
             fi
