@@ -151,7 +151,11 @@ jobs:
           [ "${{ matrix.platform }}" = "macos" ] && ext="dylib"
           [ "${{ matrix.platform }}" = "windows" ] && ext="dll"
 
-          cp "target/${{ env.TARGET }}/debug/lib$bin_name.$ext" \
+          # Définir le préfixe selon la plateforme
+          prefix="lib"
+          [ "${{ matrix.platform }}" = "windows" ] && prefix=""
+
+          cp "target/${{ env.TARGET }}/debug/${prefix}$bin_name.$ext" \
              "$bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.debug.$ext"
 
           cat > "debug_build/addons/$addon_name/$addon_name.gdextension" << EOF
@@ -204,7 +208,11 @@ jobs:
           [ "${{ matrix.platform }}" = "macos" ] && ext="dylib"
           [ "${{ matrix.platform }}" = "windows" ] && ext="dll"
 
-          cp "target/${{ env.TARGET }}/release/lib$bin_name.$ext" \
+          # Définir le préfixe selon la plateforme
+          prefix="lib"
+          [ "${{ matrix.platform }}" = "windows" ] && prefix=""
+
+          cp "target/${{ env.TARGET }}/release/${prefix}$bin_name.$ext" \
              "$bin_dir/lib$bin_name.${{ matrix.platform }}.${{ matrix.arch }}.release.$ext"
 
           cat > "release_build/addons/$addon_name/$addon_name.gdextension" << EOF
