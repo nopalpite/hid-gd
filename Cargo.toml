@@ -14,7 +14,7 @@ godot = "0.4"  # Version 0.4.5 (dernière stable février 2026)
 
 # HID API
 [target.'cfg(target_os = "linux")'.dependencies]
-hidapi = { version = "2.6", default-features = false, features = ["linux-shared-hidraw"] }
+hidapi = { version = "2.6", default-features = false, features = ["linux-static-hidraw"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 hidapi = { version = "2.6", default-features = false }
