@@ -28,20 +28,20 @@ impl Hid {
                 api.device_list()
                     .map(|info| {
                         let mut dict = VarDictionary::new();
-                        dict.insert("path", info.path().to_string_lossy().to_string());
-                        dict.insert("vid", info.vendor_id());
-                        dict.insert("pid", info.product_id());
-                        dict.insert("serial_number", info.serial_number().unwrap_or_default());
-                        dict.insert("release_number", info.release_number());
-                        dict.insert(
+                        let _ = dict.insert("path", info.path().to_string_lossy().to_string());
+                        let _ = dict.insert("vid", info.vendor_id());
+                        let _ = dict.insert("pid", info.product_id());
+                        let _ = dict.insert("serial_number", info.serial_number().unwrap_or_default());
+                        let _ = dict.insert("release_number", info.release_number());
+                        let _ = dict.insert(
                             "manufacturer_string",
                             info.manufacturer_string().unwrap_or_default(),
                         );
-                        dict.insert("product_string", info.product_string().unwrap_or_default());
-                        dict.insert("usage_page", info.usage_page());
-                        dict.insert("usage", info.usage());
-                        dict.insert("interface_number", info.interface_number());
-                        // dict.insert("bus_type", info.bus_type());
+                        let _ = dict.insert("product_string", info.product_string().unwrap_or_default());
+                        let _ = dict.insert("usage_page", info.usage_page());
+                        let _ = dict.insert("usage", info.usage());
+                        let _ = dict.insert("interface_number", info.interface_number());
+                        // let _ = dict.insert("bus_type", info.bus_type());
                         dict
                     })
                     .collect()
@@ -271,20 +271,20 @@ impl Hid {
             match dev.get_device_info() {
                 Ok(dev) => {
                     let mut dict = VarDictionary::new();
-                    dict.insert("path", dev.path().to_string_lossy().to_string());
-                    dict.insert("vid", dev.vendor_id());
-                    dict.insert("pid", dev.product_id());
-                    dict.insert("serial_number", dev.serial_number().unwrap_or_default());
-                    dict.insert("release_number", dev.release_number());
-                    dict.insert(
+                    let _ = dict.insert("path", dev.path().to_string_lossy().to_string());
+                    let _ = dict.insert("vid", dev.vendor_id());
+                    let _ = dict.insert("pid", dev.product_id());
+                    let _ = dict.insert("serial_number", dev.serial_number().unwrap_or_default());
+                    let _ = dict.insert("release_number", dev.release_number());
+                    let _ = dict.insert(
                         "manufacturer_string",
                         dev.manufacturer_string().unwrap_or_default(),
                     );
-                    dict.insert("product_string", dev.product_string().unwrap_or_default());
-                    dict.insert("usage_page", dev.usage_page());
-                    dict.insert("usage", dev.usage());
-                    dict.insert("interface_number", dev.interface_number());
-                    // dict.insert("bus_type", dev.bus_type());
+                    let _ = dict.insert("product_string", dev.product_string().unwrap_or_default());
+                    let _ = dict.insert("usage_page", dev.usage_page());
+                    let _ = dict.insert("usage", dev.usage());
+                    let _ = dict.insert("interface_number", dev.interface_number());
+                    // let _ = dict.insert("bus_type", dev.bus_type());
                     return dict;
                 }
                 Err(err) => {
