@@ -22,12 +22,12 @@ impl IRefCounted for Hid {
 #[godot_api]
 impl Hid {
     #[func]
-    fn list_devices() -> Array<Dictionary> {
+    fn list_devices() -> Array<VarDictionary> {
         match HidApi::new() {
             Ok(api) => {
                 api.device_list()
                     .map(|info| {
-                        let mut dict = Dictionary::new();
+                        let mut dict = VarDictionary::new();
                         dict.insert("path", info.path().to_string_lossy().to_string());
                         dict.insert("vid", info.vendor_id());
                         dict.insert("pid", info.product_id());
@@ -266,11 +266,11 @@ impl Hid {
 
     /// Get [`DeviceInfo`] from a HID device.
     #[func]
-    fn get_device_info(&self) -> Dictionary {
+    fn get_device_info(&self) -> VarDictionary {
         if let Some(ref dev) = self.dev {
             match dev.get_device_info() {
                 Ok(dev) => {
-                    let mut dict = Dictionary::new();
+                    let mut dict = VarDictionary::new();
                     dict.insert("path", dev.path().to_string_lossy().to_string());
                     dict.insert("vid", dev.vendor_id());
                     dict.insert("pid", dev.product_id());
@@ -294,7 +294,7 @@ impl Hid {
         } else {
             godot_error!("Device not open");
         }
-        return Dictionary::new();
+        return VarDictionary::new();
     }
 
     #[func]
